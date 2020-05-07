@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="objectscriber",
-    version="0.0.2",
+    version="0.0.3",
     author="Sergiy Popovych",
     author_email="sergiy.popovich@gmail.com",
     description="A simple tool for flexible serialization and desiarelization",
@@ -16,7 +16,6 @@ setuptools.setup(
     package_data={'': ['*.py']},
     install_requires=[
       'six',
-      'json'
     ],
     packages=setuptools.find_packages(),
 )
