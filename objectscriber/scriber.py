@@ -1,5 +1,6 @@
 import json
 import six
+import types
 
 #TODO add different serialization strategies
 #TODO: check for recursive objects
@@ -14,24 +15,37 @@ class EmptyClass:
 
 class Scriber:
     def __init__(self):
-        self.registered_classes = dict()
+        self.registered_classes = {
+            "<class 'dict'>": dict,
+            "<class 'list'>": list
+        }
 
     def register_class(self, cls):
-        self.registered_classes[str(cls)] = cls
+        if str(cls) not in self.registered_classes:
+            print (str(cls))
+            self.registered_classes[str(cls)] = cls
 
+            # Make it so that inhereting subclasses are
+            # automatically registerd
+            if not hasattr(cls, "__init_subclass__"):
+                def __init_subclass__(subcls,  *kargs, **kwargs):
+                    self.register_class(subcls)
+                cls.__init_subclass__ = classmethod(__init_subclass__)
+            else:
+                #def __init_subclass__(*kargs, **kwargs):
+                if hasattr(cls.__init_subclass__, '__text_signature') and \
+                        cls.__init_subclass__.__text_signature__ is not None:
+                    cls.__init_subclass_old__  = cls.__init_subclass__
+                else:
+                    def blank_fn(*args, **kwargs):
+                        pass
+                    cls.__init_subclass_old__ = blank_fn
 
-        # Make it so that inhereting subclasses are
-        # automatically registerd
-        if not hasattr(cls, "__init__subclass__"):
-            def __init_subclass__(subcls):
-                self.register_class(subcls)
-            cls.__init_subclass__ = __init_subclass__
-        else:
-            def __init_subclass__(subcls):
-                cls.__init_subclass__(subcls)
-                self.register_class(subcls)
+                def __init_subclass__(subcls,  *kargs, **kwargs):
+                    cls.__init_subclass_old__(subcls, *kargs, **kwargs)
+                    self.register_class(subcls)
 
-            cls.__init_subclass__ = __init_subclass__
+                cls.__init_subclass__ = classmethod(__init_subclass__)
 
         return cls
 
@@ -65,18 +79,39 @@ class Scriber:
                     "class": "scriber.JSON",
                     "spec": obj
             }
-        except (TypeError, OverflowError):
+        except (TypeError, OverflowError) as e:
             # not JSON srializable objects
+            print (obj, e)
             cls_str = str(type(obj))
+            if cls_str == "<class 'type'>":
+                import pdb; pdb.set_trace()
+                cls_str = str(obj)
             self._check_if_registered(cls_str, operation='serialize')
 
             if hasattr(obj, "serialize"):
                 spec = obj.serialize()
             else:
-                spec = dict()
-                for k, v in six.iteritems(obj.__dict__):
-                    v_dict = self.to_dict(v)
-                    spec[k] = v_dict
+                if isinstance(obj, dict):
+                    spec = dict()
+                    for k, v in obj.items():
+                        #if isinstance(obj, type):
+                        print (type(obj))
+                        import pdb; pdb.set_trace()
+                        v_dict = self.to_dict(v)
+                        spec[k] = v_dict
+                elif isinstance(obj, list):
+                    spec = list()
+                    for v in obj:
+                        if isinstance(obj, type):
+                            import pdb; pdb.set_trace()
+                        v_dict = self.to_dict(v)
+                        spec.append(v_dict)
+                else:
+                    spec = dict()
+                    for k, v in six.iteritems(obj.__dict__):
+                        if not isinstance(obj, types.FunctionType):
+                            v_dict = self.to_dict(v)
+                            spec[k] = v_dict
 
             obj_dict = {
                     "class": cls_str,
@@ -86,7 +121,6 @@ class Scriber:
         return obj_dict
 
     def serialize(self, obj):
-        import pdb; pdb.set_trace()
         obj_dict = self.to_dict(obj)
         return json.dumps(obj_dict)
 
@@ -103,7 +137,6 @@ class Scriber:
             else:
                 obj = EmptyClass()
                 for k, v in six.iteritems(spec):
-                    #import pdb; pdb.set_trace()
                     v_deserialized = self.dict_to_obj(v)
                     obj.__dict__[k] = v_deserialized
 
