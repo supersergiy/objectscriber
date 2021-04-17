@@ -88,16 +88,16 @@ Note the `serializer` arguments in the user defined `serialize` and `deserialize
 
 # Usecases in `corgie`
 ## Non-primitive Constructor Arguments
-In `corgie`, we like passing user defined classes as `__init__` arguments to our task. 
+In `corgie`, we like passing user defined classes as `__init__` arguments to our tasks. 
 One example of this comes from the fact that in alignment, we deal with a large number of CloudVolume layers (image, multiple masks, multiple fields)
 that correspond to the same dataset. Because of this, it is convenient to bundle up our CloudVolumes as is objects of `Stack` class. `corgie`'s `ComputeField` Task
-initer takes a source stack, a target stack, as well as a desgination layer for the task output. Being able to pass stacks as init argument directly simplifies the workflow and makes the code a little more pretty.
+initer takes in a source stack, a target stack, as well as a desgination layer for the task output. Being able to pass stacks as init argument directly simplifies the workflow and makes the code a little more pretty.
 
 ## Mutability
 The initial `Stack` is usually defined based on the user input, but can later be modyfied by the job to include more layers. For example, a see-through and see-through-stop masks can be added to the stack during block alignment. To correctly serialize stacks, it includes custom serialize and deserialize functions:
 
 ```python
-ef serialize(self, serializer):
+    def serialize(self, serializer):
         spec = {}
         spec['name'] = self.name
         spec['layers'] = serializer.serialize(self.layers)
@@ -115,11 +115,11 @@ ef serialize(self, serializer):
 ```
 
 ## Automatic Registration of Children
-Because `corgie.Task`, `corgie.BaseLayer` and `corgie.BaseDataBackend` classes are registered with `scriber`, users can write new tasks, layer types and data backends without even knowing that `scriber` exists. Creators of new tasks won't even be aware of this serialization library.
+Because `corgie.Task`, `corgie.BaseLayer` and `corgie.BaseDataBackend` classes are registered with `scriber`, users can write new tasks, layer types and data backends without even knowing that `scriber` exists. 
 
 
 ## Extendability
-Additionally, 
+Scriber also allows potentially nested tasks, which would allow for more complex logic. For example, we can bundle the `ComputeFieldTask` and `RenderTask` for the same bounding box into one task, or bundle all of the `ComputeFieldTask` for the vector voting job.  
 
 ## Comparison with `pickle`
 All of the properties above can be achieved with `pickle`. However, `pickle` serialization is not space efficient. Also, `pickle` has some [known issues](https://github.com/uqfoundation/dill/issues/300) with inheritance. Overall, tasks serialized with `scriber` are 5-10 times smaller than tasks serialized with `pickle`.
