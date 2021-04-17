@@ -18,10 +18,8 @@ class A:
     
 a = A(a="yo man") 
 a_s = objectscriber.serialize(a) 
-print (a_s)
+print (a_s) # output: {"class": "<class '__main__.A'>", "spec": {"kwargs": {"a": "yo man"}}}
 ```
-
-Prints out: `{"class": "<class '__main__.A'>", "spec": {"kwargs": {"a": "yo man"}}}`. 
 
 Unlike `pickle`, we have to register the base classes `scriber` can handle. Pickle pays the price for this in bloatiness.
 
@@ -37,10 +35,8 @@ class B(A):
     
 b = B(["list"], a)
 b_s = scriber.serialize(b) 
-print (b_s)
+print (b_s) # output: {"class": "<class '__main__.B'>", "spec": {"kargs": [["list"], {"class": "<class '__main__.A'>", "spec": {"kwargs": {"a": "yo man"}}}]}}
 ```
-
-Prints out: `{"class": "<class '__main__.B'>", "spec": {"kargs": [["list"], {"class": "<class '__main__.A'>", "spec": {"kwargs": {"a": "yo man"}}}]}}`.
 
 There are two cool things here: first, we didn't need to explicitly register class `B` 
 with `scriber`. Because `B` inherits from `A`, it will automatically get registered and will be understood by
