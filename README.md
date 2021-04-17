@@ -84,6 +84,8 @@ dd = scriber.deserialize(d_s)
 print (dd.soul) # output: has
 ```
 
+Note the `serializer` arguments in the user defined `serialize` and `deserialize` methods. This object is passed in by the scriber and will help the methods to handle attributes with user defined classes.
+
 # Usecases in `corgie`
 
 ## Non-primitive Constructor Arguments
