@@ -6,7 +6,7 @@ class A:
   def __init__(self, a):
     self.a = a
 
-a = A("yo man")
+a = A(a="yo man")
 a_s = scriber.serialize(a)
 print (a_s)
 
