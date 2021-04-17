@@ -1,18 +1,16 @@
-import objectscriber
-from objectscriber import register_class
+import objectscriber as scriber
 
-@register_class
+@scriber.register_class
 class A:
     def __init__(self, a):
         self.a = a
 
-@register_class
 class B(A):
     def __init__(self, a1, a2):
         super().__init__(a1)
         self.b = a2
 
-@register_class
+@scriber.register_class
 class C:
     def __init__(self, a1, a2, a3):
         self.b = B(a1, a2)

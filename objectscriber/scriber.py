@@ -13,6 +13,7 @@ class ObjectscriberException(Exception):
 class EmptyClass:
     pass
 
+
 class Scriber:
     def __init__(self):
         self.registered_classes = {
@@ -20,13 +21,12 @@ class Scriber:
             "<class 'list'>": list
         }
 
-    def register_class(self, cls):
+    def register_class(self, cls, mutable=True):
         if str(cls) not in self.registered_classes:
             print (str(cls))
             self.registered_classes[str(cls)] = cls
 
-            # Make it so that inhereting subclasses are
-            # automatically registerd
+            # Automatically register children classes or the registered cls
             if not hasattr(cls, "__init_subclass__"):
                 def __init_subclass__(subcls,  *kargs, **kwargs):
                     self.register_class(subcls)
@@ -46,6 +46,17 @@ class Scriber:
                     self.register_class(subcls)
 
                 cls.__init_subclass__ = classmethod(__init_subclass__)
+
+            # Overwrite the __init__ function to save the args first
+            def new_init(his_self, *kargs, **kwargs):
+                # if already initialized, that means we're in super().__init__(..)
+                if not hasattr(his_self, '__init_kargs__'):
+                    his_self.__init_kargs__ = kargs
+                    his_self.__init_kwargs__ = kwargs
+                cls.__old_init__(his_self, *kargs, **kwargs)
+
+            cls.__old_init__ = cls.__init__
+            cls.__init__ = new_init
 
         return cls
 
@@ -70,6 +81,7 @@ class Scriber:
 
 
     def to_dict(self, obj):
+        # TODO: handle primitive types more space efficiently
         try:
             # is the object jsonifiable?
             json.dumps(obj)
@@ -83,35 +95,30 @@ class Scriber:
             # not JSON srializable objects
             print (obj, e)
             cls_str = str(type(obj))
+            # TODO: fix this weird case
             if cls_str == "<class 'type'>":
-                import pdb; pdb.set_trace()
                 cls_str = str(obj)
             self._check_if_registered(cls_str, operation='serialize')
 
-            if hasattr(obj, "serialize"):
-                spec = obj.serialize()
+            if isinstance(obj, dict):
+                spec = dict()
+                for k, v in obj.items():
+                    v_dict = self.to_dict(v)
+                    spec[k] = v_dict
+            elif isinstance(obj, list):
+                spec = list()
+                for v in obj:
+                    v_dict = self.to_dict(v)
+                    spec.append(v_dict)
             else:
-                if isinstance(obj, dict):
-                    spec = dict()
-                    for k, v in obj.items():
-                        #if isinstance(obj, type):
-                        print (type(obj))
-                        import pdb; pdb.set_trace()
-                        v_dict = self.to_dict(v)
-                        spec[k] = v_dict
-                elif isinstance(obj, list):
-                    spec = list()
-                    for v in obj:
-                        if isinstance(obj, type):
-                            import pdb; pdb.set_trace()
-                        v_dict = self.to_dict(v)
-                        spec.append(v_dict)
+                if hasattr(obj, 'serialize'):
+                    spec = obj.serialize(self)
                 else:
                     spec = dict()
-                    for k, v in six.iteritems(obj.__dict__):
-                        if not isinstance(obj, types.FunctionType):
-                            v_dict = self.to_dict(v)
-                            spec[k] = v_dict
+                    spec['kargs'] = [self.to_dict(v) for v in obj.__init_kargs__]
+                    spec['kwargs'] = {
+                        k: self.to_dict(v) for k, v in obj.__init_kwargs__.items()
+                    }
 
             obj_dict = {
                     "class": cls_str,
@@ -132,15 +139,17 @@ class Scriber:
             obj = spec
         else:
             cls = self.get_class_from_str(cls_str, operation="deserialize")
-            if hasattr(cls, "deserialize"):
-                obj = cls.deserialize(spec_str)
+            if cls == dict:
+                obj = {k: self.dict_to_obj(v) for k, v in spec.items()}
+            elif cls == list:
+                obj = [self.dict_to_obj(v) for v in spec]
             else:
-                obj = EmptyClass()
-                for k, v in six.iteritems(spec):
-                    v_deserialized = self.dict_to_obj(v)
-                    obj.__dict__[k] = v_deserialized
-
-                obj.__class__ = cls
+                if hasattr(cls, "deserialize"):
+                    obj = cls.deserialize(spec)
+                else:
+                    kargs = [self.dict_to_obj(v) for v in spec['kargs']]
+                    kwargs = {k: self.dict_to_obj(v) for k, v in spec['kwargs'].items()}
+                    obj = cls(*kargs, **kwargs)
         return obj
 
 
