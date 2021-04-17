@@ -19,15 +19,15 @@ class C:
 a = A("a")
 b = B(["list"], "b")
 c = C({"key": 0}, ["v1", {"key": 1}], "MONEY")
-a_s = objectscriber.serialize(a)
+a_s = scriber.serialize(a)
 print (a_s)
-b_s = objectscriber.serialize(b)
+b_s = scriber.serialize(b)
 print (b_s)
-c_s = objectscriber.serialize(c)
+c_s = scriber.serialize(c)
 print (c_s)
-a_d = objectscriber.deserialize(a_s)
-b_d = objectscriber.deserialize(b_s)
-c_d = objectscriber.deserialize(c_s)
+a_d = scriber.deserialize(a_s)
+b_d = scriber.deserialize(b_s)
+c_d = scriber.deserialize(c_s)
 
 def compare_vals(x, y):
     res = x == y
