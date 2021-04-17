@@ -4,7 +4,7 @@
 However, due to this generality pickled objects are more bloated than they have to be.
 `json` works great for nestings of primitive types, but doesn't work for user defined classes.
 The goal of `ObjectScriber` (or `scriber` for short) is to serialize objects of 
-*user defined classes which support non-primitive constructor arguments and/or are mutable post construction*.
+*user defined classes which support objects of user defined classes as constructor arguments and are mutable post construction*.
 
 # Examples
 ## Simplest Example
@@ -16,17 +16,16 @@ class A:
   def __init__(self, a):
     self.a = a
     
-a = A("yo man") 
+a = A(a="yo man") 
 a_s = objectscriber.serialize(a) 
 print (a_s)
 ```
 
-Prints out: `{"class": "<class '__main__.A'>", "spec": {"kargs": [{"class": "scriber.JSON", "spec": "yo man"}], "kwargs": {}}}`. 
+Prints out: `{"class": "<class '__main__.A'>", "spec": {"kwargs": {"a": "yo man"}}}`. 
 
 Unlike `pickle`, we have to register the base classes `scriber` can handle. Pickle pays the price for this in bloatiness.
 
-Our output is actually pretty bloaty itself, which could be optimized by more detailed handling of primitive classes. 
-But so far, it's not that cool. It gets cooler.
+So far, it's not that cool. It gets cooler.
 
 ## Scribing Children Classes
 If we extend the previous example by adding the following:
@@ -41,11 +40,11 @@ b_s = scriber.serialize(b)
 print (b_s)
 ```
 
-Prints out: `{"class": "<class '__main__.B'>", "spec": {"kargs": [{"class": "scriber.JSON", "spec": ["list"]}, {"class": "<class '__main__.A'>", "spec": {"kargs": [{"class": "scriber.JSON", "spec": "yo man"}], "kwargs": {}}}], "kwargs": {}}}`.
+Prints out: `{"class": "<class '__main__.B'>", "spec": {"kargs": [["list"], {"class": "<class '__main__.A'>", "spec": {"kwargs": {"a": "yo man"}}}]}}`.
 
-Again, not super conscise. But there are two cool things: first, we didn't need to explicitly register class `B` 
+There are two cool things here: first, we didn't need to explicitly register class `B` 
 with `scriber`. Because `B` inherits from `A`, it will automatically get registered and will be understood by
-`scriber`. Second, constructor of the object `b` took a non-primitive object `a` as an argument. 
+`scriber`. Second, constructor of the object `b` took a user defined object `a` as an argument. 
 
 ## Deserializing 
 ```
@@ -63,10 +62,34 @@ The basic version of scriber works by saving `kargs` and `kwargs` passed into th
 If the object is changed after the initialization, the saved `kargs` and `kwargs` will no longer represent the up to date state
 of the object. 
 
-This can be handled in two ways. The first
+The way that this case is currently handled is by allowing registered classes to implement their own `serialize` and `deserialize` methods. Here's an example:
+
+```
+import objectscriber as scriber
+
+@scriber.register_class 
+class UserD: 
+  def __init__(self):
+    self.soul = None
+    
+  def serialize(self, serializer):
+    return serializer.serialize(self.soul)
+    
+  @classmethod 
+  def deserialize(cls, s, serializer):
+    result = cls()
+    result.soul = serializer.deserialize(s)
+    
+d = UserD() # the object has no soul during initialization
+d.soul = 'has' # now it does
+d_s = scriber.serialize(d) 
+print (d_s) # output: {"class": "<class '__main__.UserD'>", "spec": "\"has\""}
+dd = scriber.deserialize(d_s) 
+print (dd.soul) # output: has
+```
 
 # Usecases in `corgie`
 
-## Automatic Registration of Children
 ## Non-primitive Constructor Arguments
 ## Mutability
+## Automatic Registration of Children
