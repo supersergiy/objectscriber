@@ -123,4 +123,3 @@ Scriber also allows potentially nested tasks, which would allow for more complex
 
 ## Comparison with `pickle`
 All of the properties above can be achieved with `pickle`. However, `pickle` serialization is not space efficient. Also, `pickle` has some [known issues](https://github.com/uqfoundation/dill/issues/300) with inheritance. Overall, tasks serialized with `scriber` are 5-10 times smaller than tasks serialized with `pickle`.
-inheritance 
