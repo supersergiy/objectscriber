@@ -8,7 +8,7 @@ The goal of `ObjectScriber` (or `scriber` for short) is to serialize objects of
 
 # Examples
 ## Simplest Example
-```
+```python
 import objectscriber as scriber
 
 @scriber.register_class
@@ -27,7 +27,7 @@ So far, it's not that cool. It gets cooler.
 
 ## Scribing Children Classes
 If we extend the previous example by adding the following:
-```
+```python
 class B(A): 
   def __init__(self, a1, a2):
     super().__init__(a1)
@@ -43,7 +43,7 @@ with `scriber`. Because `B` inherits from `A`, it will automatically get registe
 `scriber`. Second, constructor of the object `b` took a user defined object `a` as an argument. 
 
 ## Deserializing 
-```
+```python
 bb = scriber.deserialize(b_s) 
 aa = scriber.deserialize(a_s) 
 ```
@@ -60,7 +60,7 @@ of the object.
 
 The way that this case is currently handled is by allowing registered classes to implement their own `serialize` and `deserialize` methods. Here's an example:
 
-```
+```python
 import objectscriber as scriber
 
 @scriber.register_class 
