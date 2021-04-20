@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="objectscriber",
-    version="0.0.4",
+    name="cucumber",
+    version="0.0.5",
     author="Sergiy Popovych",
     author_email="sergiy.popovich@gmail.com",
     description="A simple tool for flexible serialization and desiarelization",

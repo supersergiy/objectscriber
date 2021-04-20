@@ -136,7 +136,7 @@ class Scriber:
                 obj = {k: self.dict_to_obj(v) for k, v in spec.items()}
             else:
                 if hasattr(cls, "deserialize"):
-                    obj = cls.deserialize(spec)
+                    obj = cls.deserialize(spec, self)
                 else:
                     kargs = []
                     if 'kargs' in spec:
